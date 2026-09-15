@@ -1,0 +1,18 @@
+# Merge into the site's Postfix main.cf. Replace the hostname and certificate paths.
+myhostname = mail.example.com
+mydestination = localhost
+mynetworks = 127.0.0.0/8 [::1]/128
+relay_domains = socketmap:unix:/run/coremx/lookup.sock:domains
+relay_recipient_maps = socketmap:unix:/run/coremx/lookup.sock:recipients
+relay_transport = lmtp:unix:/run/coremx/lmtp.sock
+smtpd_relay_restrictions = reject_unauth_destination
+smtpd_recipient_restrictions = reject_non_fqdn_recipient, reject_unknown_recipient_domain
+message_size_limit = 33554432
+smtpd_tls_security_level = may
+smtpd_tls_cert_file = /etc/coremx/certificates/smtp-fullchain.pem
+smtpd_tls_key_file = /etc/coremx/certificates/smtp-key.pem
+smtp_tls_security_level = may
+smtpd_milters = inet:127.0.0.1:11332
+non_smtpd_milters = $smtpd_milters
+milter_default_action = tempfail
+milter_protocol = 6

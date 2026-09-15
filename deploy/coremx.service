@@ -1,0 +1,28 @@
+[Unit]
+Description=CoreMX composed Central runtime
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=coremx
+Group=coremx
+WorkingDirectory=/opt/coremx/composite_server
+RuntimeDirectory=coremx
+RuntimeDirectoryMode=0750
+StateDirectory=coremx
+UMask=0027
+ExecStart=/bin/sh -c 'exec /usr/bin/node main.js fullruntime < /etc/coremx/config.json'
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=45
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/coremx /run/coremx
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

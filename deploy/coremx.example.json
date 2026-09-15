@@ -1,0 +1,29 @@
+{
+  "applicationProfile": "coremx",
+  "webauthnOrigin": "https://mail.example.com",
+  "webauthnRpId": "mail.example.com",
+  "webauthnRpName": "CoreMX",
+  "coremx": {
+    "publicOrigin": "https://mail.example.com",
+    "ingressAddress": "127.0.0.1:30100",
+    "trustedProxyAddresses": [
+      "127.0.0.1",
+      "::1"
+    ],
+    "runDirectory": "/run/coremx",
+    "portalDirectory": "/opt/coremx/composite_portal/.output/public",
+    "submissionPort": 10025,
+    "experimentalActiveSync": false,
+    "policyRefreshHours": 24,
+    "devicePolicy": {
+      "DevicePasswordEnabled": 1,
+      "MinDevicePasswordLength": 6,
+      "MaxInactivityTimeDeviceLock": 900,
+      "MaxDevicePasswordFailedAttempts": 10,
+      "AllowSimpleDevicePassword": 0,
+      "AttachmentsEnabled": 1,
+      "MaxAttachmentSize": 33554432,
+      "AllowHTMLEmail": 1
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "coremx-overlay",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "compose": "bash build_compositeserver.sh --no-install",
+    "test:browser": "node test/browser-webmail.cjs"
+  }
+}

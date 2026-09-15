@@ -1,0 +1,32 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const path = require('node:path');
+const net = require('node:net');
+const { once } = require('node:events');
+const { MailStore } = require('../server/coremx/store');
+const { MailService } = require('../server/coremx/mail');
+const { startLMTP } = require('../server/coremx/lmtp');
+const { startSocketMap } = require('../server/coremx/socketmap');
+test('Postfix Unix interfaces validate recipients, dot-unstuff binary delivery and reject relaying', { timeout: 10000 }, async t => {
+    const directory = await fs.mkdtemp(path.resolve('.cache/lmtp-'));
+    const store = await new MailStore({ runDirectory: directory, kv: require('./helpers/kv')() }).open();
+    const mail = new MailService(store);
+    await store.transaction('domain', () => [{ collection: 'domains', id: 'domain', value: { name: 'example.test' } }]);
+    await mail.createMailbox({ email: 'alice@example.test', owner: 'alice' });
+    const lmtpPath = path.join(directory, 'lmtp.sock'); const lookupPath = path.join(directory, 'lookup.sock');
+    const server = await startLMTP({ socketPath: lmtpPath, mail }); const maps = await startSocketMap({ socketPath: lookupPath, mail });
+    const socket = net.createConnection({ path: lmtpPath }); const lookup = net.createConnection({ path: lookupPath });
+    t.after(async () => { socket.destroy(); lookup.destroy(); await Promise.all([new Promise(r => server.close(r)), new Promise(r => maps.close(r))]); await store.close(); await fs.rm(directory, { recursive: true, force: true }); });
+    async function line(command) { const response = once(socket, 'data'); if (command !== undefined) socket.write(command + '\r\n'); return (await response)[0].toString(); }
+    assert.match(await line(), /^220/); assert.match(await line('LHLO postfix'), /^250/);
+    assert.match(await line('MAIL FROM:<sender@example.test>'), /^250/);
+    assert.match(await line('RCPT TO:<outsider@other.test>'), /^550/);
+    assert.match(await line('RCPT TO:<alice@example.test>'), /^250/);
+    assert.match(await line('DATA'), /^354/);
+    assert.match(await line('From: sender@example.test\r\nTo: alice@example.test\r\nSubject: Delivered\r\n\r\n..dot-stuffed\r\n.'), /^250/);
+    const message = store.forMailbox(mail.mailbox('alice@example.test').id).list('messages')[0]; assert.match((await store.getBlob(message.blob)).toString(), /\r\n\.dot-stuffed\r\n$/);
+    const query = 'recipients alice@example.test'; const result = once(lookup, 'data'); lookup.write(Buffer.byteLength(query) + ':' + query + ','); assert.equal((await result)[0].toString(), '4:OK 1,');
+    const unknown = 'recipients nobody@other.test'; const miss = once(lookup, 'data'); lookup.write(Buffer.byteLength(unknown) + ':' + unknown + ','); assert.equal((await miss)[0].toString(), '9:NOTFOUND ,');
+});

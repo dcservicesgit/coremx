@@ -1,0 +1,8 @@
+# Add a loopback-only submission listener for the CoreMX outbox. Postfix may
+# listen on TCP; the Node.js application never does. Disable chroot on smtp/lmtp
+# processes that access /run/coremx, and grant postfix membership in coremx group.
+127.0.0.1:10025 inet n - n - - smtpd
+  -o smtpd_relay_restrictions=permit_mynetworks,reject
+  -o smtpd_recipient_restrictions=permit_mynetworks,reject
+  -o smtpd_client_restrictions=permit_mynetworks,reject
+  -o smtpd_sasl_auth_enable=no

@@ -1,0 +1,9 @@
+.cache/
+composite_portal/
+composite_server/
+node_modules/
+.data/
+.env
+.env.*
+*.log
+config.json
